@@ -88,10 +88,10 @@ flutter build linux --release
 ## 📱 Screenshots
 
 <p align="center">
-  <img src="docs/img01.png" alt="Tela Inicial" width="250">
-  <img src="docs/img02.png" alt="Dart SDK" width="250">
-  <img src="docs/img03.png" alt="Flutter SDK" width="250">
+  <img src="docs/img01.png" alt="Flutter Install - Interface Moderna" width="700">
 </p>
+
+> Interface moderna com design glassmorphism e animações suaves
 
 ---
 
