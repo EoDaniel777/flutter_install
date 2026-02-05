@@ -1,0 +1,52 @@
+name: Build Flutter Windows (flutter_install)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Permite rodar manualmente no GitHub Actions
+
+jobs:
+  build-windows:
+    runs-on: windows-latest  # Máquina Windows hospedada pelo GitHub
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'     # Ou 'beta'/'master' se precisar de versão específica
+          # flutter-version: '3.24.5'  # Descomente e ajuste se quiser fixar a mesma versão do seu pubspec (Flutter 3.24.5)
+
+      - name: Enable Windows desktop support
+        run: flutter config --enable-windows-desktop
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Build Windows release
+        run: flutter build windows --release
+
+      - name: Zip the Windows build artifacts
+        run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath flutter_install-windows-release.zip
+        shell: pwsh
+
+      - name: Upload Windows build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter_install-windows-release
+          path: flutter_install-windows-release.zip
+          retention-days: 14  # Mantém o artifact por 14 dias (ajuste se quiser mais/menos)
+
+      # Opcional: Se quiser release automática em tags (ex: git tag v1.0.0)
+      - name: Create GitHub Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: flutter_install-windows-release.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false
