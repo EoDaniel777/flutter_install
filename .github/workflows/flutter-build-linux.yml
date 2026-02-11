@@ -1,0 +1,75 @@
+name: Build Flutter Linux
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:     # Permite rodar manualmente
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest   # ou ubuntu-24.04 se quiser mais recente
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          # flutter-version: '3.24.5'   # descomente se quiser fixar exatamente a mesma versão do pubspec
+
+      - name: Enable Linux desktop support
+        run: flutter config --enable-linux-desktop
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            clang \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libgtk-3-dev \
+            liblzma-dev \
+            libstdc++-12-dev
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Build Linux release
+        run: flutter build linux --release
+
+      # Compacta a pasta inteira do build (recomendado para Linux desktop)
+      - name: Zip the Linux build artifacts
+        run: |
+          cd build/linux/x64/release/bundle
+          zip -r ../../../flutter_install-linux-release.zip .
+        working-directory: .
+
+      # Alternativa: se preferir AppImage (mais "instalável"), descomente abaixo
+      # e comente o zip acima. Precisa do appimage-builder ou linuxdeploy.
+      # Mas para simplicidade vamos com zip primeiro.
+      #
+      # - name: Create AppImage (opcional)
+      #   run: |
+      #     # Instalar linuxdeploy ou appimage-builder aqui se quiser
+      #     # Exemplo básico com zip mesmo por enquanto
+
+      - name: Upload Linux build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter_install-linux-release
+          path: flutter_install-linux-release.zip
+          retention-days: 14
+
+      # Opcional: Release automática quando fizer git tag v1.0.0
+      - name: Create GitHub Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: flutter_install-linux-release.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false
